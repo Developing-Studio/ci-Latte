@@ -13,15 +13,15 @@ class AdminCog(commands.Cog):
 
     @commands.is_owner()
     @commands.group(
-        name="module",
-        aliases=["모듈", "m","extension", "확장", "ext"],
+        name="ext",
+        aliases=["확장", "extension", "모듈", "m", "module"],
         description="",
         help=""
     )
-    async def module_cmd(self, ctx: commands.Context):
+    async def ext_cmd(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             embedfactory = EmbedFactory(
-                title="[ Admin Extension - Module Commands ]",
+                title="[ Admin Extension - Extension Commands ]",
                 description="This is an admin-only extension to manage Latte`s extensions in discord chat.",
                 color=EmbedFactory.default_color,
                 author={
@@ -35,16 +35,16 @@ class AdminCog(commands.Cog):
             )
 
     @commands.is_owner()
-    @module_cmd.command(
+    @ext_cmd.command(
         name="load",
         aliases=["로드", "불러오기"],
         description="",
         help=""
     )
-    async def module_load_cmd(self, ctx: commands.Context, *, params_raw: str):
+    async def ext_load_cmd(self, ctx: commands.Context, *, params_raw: str):
         params = params_raw.split(' ')
         self.bot.get_logger().info(
-            msg=f"[AdminExt] User {ctx.author.name}#{ctx.author.discriminator} used `module.load` command with "
+            msg=f"[AdminExt] User {ctx.author.name}#{ctx.author.discriminator} used `ext.load` command with "
                 f"following arguments : {params} "
         )
 
@@ -62,7 +62,75 @@ class AdminCog(commands.Cog):
             await ctx.send(
                 embed=EmbedFactory.WARN_EMBED(
                     title="Invalid usage!",
-                    description="Module commands must be used with cli-style arguments to define module to load!"
+                    description="Module commands must be used with cli-style arguments to define module to load!\n"
+                                "usage: `ext load -c (category) -n (name)` or `ext load -d (dir)`"
+                )
+            )
+
+
+    @commands.is_owner()
+    @ext_cmd.command(
+        name="unload",
+        aliases=["언로드", "제거하기"],
+        description="",
+        help=""
+    )
+    async def ext_unload_cmd(self, ctx: commands.Context, *, params_raw: str):
+        params = params_raw.split(' ')
+        self.bot.get_logger().info(
+            msg=f"[AdminExt] User {ctx.author.name}#{ctx.author.discriminator} used `ext.unload` command with "
+                f"following arguments : {params} "
+        )
+
+        params = await self.parse_params(params)
+
+        category: str = params.pop("category") if "category" in params.keys() else ''
+        name: str = params.pop("name") if "name" in params.keys() else ''
+        dir: str = params.pop("dir") if "dir" in params.keys() else ''
+
+        if category != '' and name != '':
+            self.bot.ext.unload_ext(bot=self.bot, ext_category=category, ext_name=name)
+        elif dir != '':
+            self.bot.ext.unload_ext(bot=self.bot, ext_dir=dir)
+        else:
+            await ctx.send(
+                embed=EmbedFactory.WARN_EMBED(
+                    title="Invalid usage!",
+                    description="Module commands must be used with cli-style arguments to define module to load!\n"
+                                "usage: `ext unload -c (category) -n (name)` or `ext unload -d (dir)`"
+                )
+            )
+
+    @commands.is_owner()
+    @ext_cmd.command(
+        name="reload",
+        aliases=["리로드", "다시불러오기"],
+        description="",
+        help=""
+    )
+    async def module_reload_cmd(self, ctx: commands.Context, *, params_raw: str):
+        params = params_raw.split(' ')
+        self.bot.get_logger().info(
+            msg=f"[AdminExt] User {ctx.author.name}#{ctx.author.discriminator} used `ext.reload` command with "
+                f"following arguments : {params} "
+        )
+
+        params = await self.parse_params(params)
+
+        category: str = params.pop("category") if "category" in params.keys() else ''
+        name: str = params.pop("name") if "name" in params.keys() else ''
+        dir: str = params.pop("dir") if "dir" in params.keys() else ''
+
+        if category != '' and name != '':
+            self.bot.ext.reload_ext(bot=self.bot, ext_category=category, ext_name=name)
+        elif dir != '':
+            self.bot.ext.reload_ext(bot=self.bot, ext_dir=dir)
+        else:
+            await ctx.send(
+                embed=EmbedFactory.WARN_EMBED(
+                    title="Invalid usage!",
+                    description="Module commands must be used with cli-style arguments to define module to load!\n"
+                                "usage: `ext reload -c (category) -n (name)` or `ext reload -d (dir)`"
                 )
             )
 
