@@ -2,8 +2,6 @@ from typing import Tuple, Any, Dict, Union
 import sqlite3
 import discord
 
-# https://discordapp.com/channels/500515277222445068/739095566004518912/739095594156425297
-
 Key = Union[str, int, bytes]
 
 

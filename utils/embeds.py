@@ -1,7 +1,9 @@
 from typing import NoReturn, Dict, List, Any, overload
 
+import discord
+
 from .design_patterns import Factory
-from discord import Embed, Colour
+from discord import Embed, Colour, User
 
 
 class EmbedFactory(Factory):
@@ -156,7 +158,7 @@ class EmbedFactory(Factory):
             else:
                 raise InvalidFieldError(embed_factory=self, invalid_field=field)
 
-    def build(self) -> Embed:
+    async def build(self) -> Embed:
         embed = Embed(
             title=self.title,
             description=self.description,
@@ -181,12 +183,22 @@ class EmbedFactory(Factory):
         return embed
 
     @classmethod
-    def LOG_EMBED(cls, title: str, desc: str) -> Embed:
+    def get_user_info(cls, user: User) -> str:
+        return f"{user.name}#{user.discriminator} ({user.id})"
+
+    @classmethod
+    def LOG_EMBED(cls, title: str, description: str) -> Embed:
         return Embed(
             title=title,
-            description=desc,
+            description=description,
             colour=cls.default_color
         )
+
+    @classmethod
+    def COMMAND_LOG_EMBED(cls, title: str, description: str, user: discord.User) -> Embed:
+        embed = cls.LOG_EMBED(title=title, description=description)
+        embed.set_footer(text=f"command executed by {cls.get_user_info(user=user)}", icon_url=user.avatar_url)
+        return embed
 
     @classmethod
     def WARN_EMBED(cls, title: str, description: str) -> Embed:

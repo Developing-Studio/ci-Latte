@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from core import UserDB, GuildDB, ExtensionManager
-from dataclasses import dataclass
+from .DB import UserDB, GuildDB
+from .ExtensionManager import ExtensionManager
 from typing import List, Tuple, Any, Dict, NoReturn, Callable, Union
 import discord
 from discord.ext.commands import AutoShardedBot
@@ -37,9 +37,10 @@ class Config:
         self.text_processor = text_processor
 
     def read(self, encoding: str = "utf-8") -> Any:
+        mode = 'r' + ('b' if self.config_type == self.Types.BYTES else 't')
         with open(
                 file=self.config_dir,
-                mode='r' + 'b' if self.config_type == self.Types.BYTES else 't',
+                mode=mode,
                 encoding=encoding
         ) as config_file:
             return config_file.read()
@@ -87,7 +88,7 @@ class Latte(AutoShardedBot):
 
     # Bot Configuration
     bot_config_dir = "./config.json"
-    bot_config: Config = Config(config_dir=bot_config_dir, config_type=Config.Types.JSON)
+    bot_config: Config = None
 
     # Database
     db_dirs: Dict[str, str] = {
@@ -114,7 +115,7 @@ class Latte(AutoShardedBot):
     official_community_invite: str = "duYnk96"
     bug_report_invite: str = "t6vVSYX"
 
-    def __init__(self, command_prefix, test_mode: bool = False, **options):
+    def __init__(self, test_mode: bool = False, **options):
         """
         Initialize `Latte` instance.
         :param test_mode: boolean value which indicates whether latte should run as test mode.
@@ -125,7 +126,6 @@ class Latte(AutoShardedBot):
             options.pop("command_prefix")
         if "help_command" in options.keys():
             options.pop("help_command")
-        super().__init__(command_prefix=";", help_command=None, **options)
 
         # Set bot`s test mode
         self.test_mode = test_mode
@@ -136,7 +136,7 @@ class Latte(AutoShardedBot):
 
         # Setup bot
         self._setup()
-        super().__init__(command_prefix, **options)
+        super().__init__(self.bot_config.config["prefix"], help_command=None, loop=asyncio.get_event_loop(), **options)
 
     def _opt_out_token(self, args: Tuple[Any], kwargs: Dict[str, Any]) \
             -> Tuple[Tuple[Tuple[Any], ...], Dict[str, Dict[str, Any]]]:
@@ -174,6 +174,7 @@ class Latte(AutoShardedBot):
         self.logger.info(msg="[SETUP] Setup Phase Started :")
 
         self.logger.info(msg="[SETUP] Loading bot config")
+        self.bot_config = Config(config_dir=self.bot_config_dir, config_type=Config.Types.JSON)
         self.bot_config.load()
 
         self.logger.info(msg="[SETUP] Connecting databases.")
@@ -182,7 +183,6 @@ class Latte(AutoShardedBot):
 
         self.logger.info(msg="[SETUP] Preparing ExtensionManager.")
         self.ext = ExtensionManager(extensions_config=self.bot_config.config["ext"])
-        self.ext.load_all(bot=self)
 
         self.logger.info(msg="[SETUP] Setup Phase Finished.")
 
@@ -201,11 +201,13 @@ class Latte(AutoShardedBot):
             "버그 제보는 언제나 환영이에요 :D"
         ]
 
+        self.ext.load_all(bot=self)
+
         # self.lavalink = LavalinkClient(user_id=self.user.id if self.user is not None else self.bot_config["id"])
 
         self.logger.info(msg="Initialization Phase Finished")
 
-    async def _save(self):
+    def _save(self):
         """
         save bot`s datas.
         """
@@ -229,15 +231,18 @@ class Latte(AutoShardedBot):
 
         # Run bot using Super-class (discord.ext.commands.AutoSharedBot).
         if self.test_mode:
-            self.command_prefix = self.bot_config["test"]["prefix"]
-            super().run(self.bot_config["test"]["token"], *args, **kwargs)
+            self.command_prefix = self.bot_config.config["test"]["prefix"]
+            super().run(self.bot_config.config["test"]["token"], *args, **kwargs)
 
         else:
-            self.command_prefix = self.bot_config["prefix"]
-            super().run(self.bot_config["token"], *args, **kwargs)
+            self.command_prefix = self.bot_config.config["prefix"]
+            super().run(self.bot_config.config["token"], *args, **kwargs)
 
         # Save Datas
         self._save()
+
+    def check_reboot(self) -> bool:
+        return self.do_reboot and self.is_closed()
 
     def get_logger(self) -> logging.Logger:
         """
