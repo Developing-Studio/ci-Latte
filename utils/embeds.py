@@ -1,31 +1,62 @@
 from typing import NoReturn, Dict, List, Any, overload
-
-import discord
-
+import discord, re
 from .design_patterns import Factory
 from discord import Embed, Colour, User
 
 
-class EmbedFactory(Factory):
+class EmbedCheck:
+    @staticmethod
+    def check_title(value) -> bool:
+        return type(value) == str
 
+    @staticmethod
+    def check_desc(value) -> bool:
+        return type(value) == str
+
+    @staticmethod
+    def check_color(value) -> bool:
+        return isinstance(value, (Colour,))
+
+    @staticmethod
+    def check_author(value) -> bool:
+        return type(value) == dict and "name" in value and "icon_url" in value
+
+    @staticmethod
+    def check_footer(value) -> bool:
+        return type(value) == dict and "text" in value and "icon_url" in value
+
+    @staticmethod
+    def check_url(value) -> bool:
+        return type(value) == str and re.compile(r"http").match(value)
+
+    @staticmethod
+    def check_fields(value) -> bool:
+        return type(value) == list and [type(item) for item in value] == [dict]*len(value) \
+               and [("name" in item and "value" in item) for item in value] == [True]*len(value)
+
+
+class EmbedFactory(Factory):
     # Log colors
-    default_color: Colour = Colour.from_rgb(236, 202, 179)    # latte color
+    default_color: Colour = Colour.from_rgb(236, 202, 179)  # latte color
     warning_color: Colour = Colour.gold()
     error_color: Colour = Colour.red()
 
     def __init__(self, **attrs):
         self.target_cls = Embed.__class__
-        self._title: str = attrs.pop("title") if "title" in attrs.keys() else ""
-        self._description: str = attrs.pop("description") if "description" in attrs.keys() else ""
-        self._color: Colour = attrs.pop("color") if "color" in attrs.keys() else self.default_color
-        self._author: Dict[str, str] = attrs.pop("author") if "author" in attrs.keys() else {"name": "", "icon_url": ""}
-        self._footer: Dict[str, str] = attrs.pop("footer") if "footer" in attrs.keys() else {"text": "", "icon_url": ""}
+        self._title: str = attrs.pop("title") if "title" in attrs.keys() and EmbedCheck.check_title(attrs["title"]) else ""
+        self._description: str = attrs.pop("description") if "description" in attrs.keys() and EmbedCheck.check_desc(attrs["description"]) else ""
+        self._color: Colour = attrs.pop("color") if "color" in attrs.keys() and EmbedCheck.check_color(attrs["color"]) else self.default_color
+        self._author: Dict[str, str] = attrs.pop("author") if "author" in attrs.keys() and EmbedCheck.check_author(attrs["author"]) else {"name": "", "icon_url": ""}
+        self._footer: Dict[str, str] = attrs.pop("footer") if "footer" in attrs.keys() and EmbedCheck.check_footer(attrs["footer"]) else {"text": "", "icon_url": ""}
+        # self._thumbnail_url: str = attrs.pop("thumbnail_url") if "thumbnail_url" in attrs.keys() and EmbedCheck.check_url(attrs["thumbnail_url"]) else ""
         self._thumbnail_url: str = attrs.pop("thumbnail_url") if "thumbnail_url" in attrs.keys() else ""
-        self._image_url: str = attrs.pop("image_url") if "image_url" in attrs.keys() else ""
-        self._fields: List[Dict[str, str]] = attrs.pop("fields") if "fields" in attrs.keys() else []
+        self._image_url: str = attrs.pop("image_url") if "image_url" in attrs.keys() and EmbedCheck.check_url(attrs["image_url"]) else ""
+        self._fields: List[Dict[str, str]] = attrs.pop("fields") if "fields" in attrs.keys() and EmbedCheck.check_fields(attrs["fields"]) else []
+
+        print(attrs)
 
         if attrs:
-            raise UnexpectedKwargsError(embed_factory=self)
+            raise UnexpectedKwargsError(embed_factory=self, unexpected_kwargs=attrs)
 
     @property
     def title(self) -> str:
@@ -65,7 +96,7 @@ class EmbedFactory(Factory):
     @author.setter
     def author(self, value: Dict[str, str]) -> NoReturn:
         # Type Check
-        if isinstance(value, (dict, )):
+        if isinstance(value, (dict,)):
             TypeError("New data must be a dictionary which contains string keys and string values.")
 
         # Attribute Check
@@ -83,7 +114,7 @@ class EmbedFactory(Factory):
     @footer.setter
     def footer(self, value: Dict[str, str]) -> NoReturn:
         # Type Check
-        if isinstance(value, (dict, )):
+        if isinstance(value, (dict,)):
             TypeError("New data must be a dictionary which contains string keys and string values.")
 
         # Attribute Check
@@ -123,7 +154,7 @@ class EmbedFactory(Factory):
             raise TypeError("New data to assign fields property must be a list or tuple instance.")
 
         for item in value:
-            if not isinstance(item, (dict, )):
+            if not isinstance(item, (dict,)):
                 raise ValueError("New field to assign in fields property must be a Dictionary instance"
                                  " contains string key and string value.")
             if "name" not in item.keys() or "value" not in item.keys():
@@ -133,10 +164,10 @@ class EmbedFactory(Factory):
         self._fields.extend(value)
 
     @overload
-    async def add_field(self, name: str, value: str):
-        if type(name) != str or type(value) != str:
-            raise TypeError("Field name and value must be a str!")
-        self.fields.append({"name": name, "value": value})
+    async def add_field(self, name: str, value: str, inline: bool = False):
+        if type(name) != str or type(value) != str or type(inline) != bool:
+            raise TypeError("Field name and value must be a str, str, bool!")
+        self.fields.append({"name": name, "value": value, "inline": inline})
 
     @overload
     async def add_field(self, field: Dict[str, str]):
@@ -175,7 +206,7 @@ class EmbedFactory(Factory):
             embed.set_author(name=self.author["name"], icon_url=self.author["icon_url"])
 
         for field in self.fields:
-            embed.add_field(name=field["name"], value=field["value"])
+            embed.add_field(name=field["name"], value=field["value"], inline=bool(field["inline"]) if "inline" in field else False)
 
         if self.footer["text"] != "" and self.footer["icon_url"] != "":
             embed.set_footer(text=self.footer["text"], icon_url=self.footer["icon_url"])
@@ -183,8 +214,15 @@ class EmbedFactory(Factory):
         return embed
 
     @classmethod
-    def get_user_info(cls, user: User) -> str:
-        return f"{user.name}#{user.discriminator} ({user.id})"
+    def get_user_info(cls, user: User, contain_id: bool = True) -> str:
+        return f"{user.name}#{user.discriminator}" + f" ({user.id})" if contain_id else ''
+
+    @classmethod
+    def get_command_caller(cls, user: User) -> Dict[str, str]:
+        return {
+            "text": f"command executed by {cls.get_user_info(user=user)}",
+            "icon_url": user.avatar_url
+        }
 
     @classmethod
     def LOG_EMBED(cls, title: str, description: str) -> Embed:
@@ -197,7 +235,8 @@ class EmbedFactory(Factory):
     @classmethod
     def COMMAND_LOG_EMBED(cls, title: str, description: str, user: discord.User) -> Embed:
         embed = cls.LOG_EMBED(title=title, description=description)
-        embed.set_footer(text=f"command executed by {cls.get_user_info(user=user)}", icon_url=user.avatar_url)
+        command_caller_info: Dict[str, str] = cls.get_command_caller(user)
+        embed.set_footer(text=command_caller_info["text"], icon_url=command_caller_info["icon_url"])
         return embed
 
     @classmethod
@@ -271,4 +310,3 @@ class InvalidFieldError(EmbedFactoryException):
         super().__init__(embed_factory, *args,
                          msg="Embed field must have structure of `{'name': name, 'value': value}`",
                          **kwargs)
-

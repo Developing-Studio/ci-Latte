@@ -1,14 +1,13 @@
 from typing import Tuple, Any, Dict, Union
-import sqlite3
-import discord
+from abc import abstractmethod
+import discord, sqlalchemy
 
 Key = Union[str, int, bytes]
 
 
 class DatabaseWrapper:
     SQL_QUERY = Tuple[str, Tuple[Any]]
-
-    db_connection: sqlite3.Connection = None
+    __create_sql__: str = ""
 
     def __init__(self, db_dir: str):
         self.db_dir = db_dir
@@ -23,18 +22,42 @@ class DatabaseWrapper:
         """
         pass
 
+    @abstractmethod
     def connect(self):
-        self.db_connection = sqlite3.connect(database=self.db_dir)
+        """
+        connect to DB
+        """
 
+    @abstractmethod
     def close(self):
-        self.db_connection.close()
+        """
+        close the DB connection
+        """
+        pass
 
-    def post(self, query: str, params: Tuple[Any]) -> Any:
+    @abstractmethod
+    def is_connected(self) -> bool:
+        """
+        Check if the DB is connected
+        :return: boolean value which indicates wheter DB is connected or not.
+        """
+        pass
+
+    @abstractmethod
+    def custom_query(self, query: str, params: Tuple[Any]) -> Any:
         """
         Post a custom query and retrieve response.
-        :param query:
-        :param params:
+        :param query: a query to process
+        :param params: a parameter used in query
         :return:
+        """
+        pass
+
+    @abstractmethod
+    def create(self):
+        """
+        Create inital tables to use.
+        self.__create_sql__ is used to create DB contents.
         """
         pass
 
@@ -47,6 +70,7 @@ class UserDB(DatabaseWrapper):
         :param options:
         :return:
         """
+        pass
 
     def set(self, user_id: int, **datas: Dict[Key, Any]):
         """
@@ -55,6 +79,7 @@ class UserDB(DatabaseWrapper):
         :param datas:
         :return:
         """
+        pass
 
 
 class GuildDB(DatabaseWrapper):
@@ -65,6 +90,7 @@ class GuildDB(DatabaseWrapper):
         :param options:
         :return:
         """
+        pass
 
     def set(self, user_id: int, **datas: Dict[Key, Any]):
         """
@@ -73,3 +99,4 @@ class GuildDB(DatabaseWrapper):
         :param datas:
         :return:
         """
+        pass

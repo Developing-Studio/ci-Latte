@@ -2,6 +2,7 @@ import argparse
 from utils import cast_to_bool
 from core import Latte
 
+
 def main():
     # Create the parser
     my_parser = argparse.ArgumentParser(

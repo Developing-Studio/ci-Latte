@@ -1,15 +1,36 @@
-import logging
-
 from discord.ext import commands
+import json
 from core import Latte, BadExtArguments
-from utils import EmbedFactory
-from typing import Dict, List, Optional
+from utils import EmbedFactory, get_cog_name_in_ext
+from typing import Dict, List, Optional, Type
 
 
 class AdminCog(commands.Cog):
 
     def __init__(self, bot: Latte):
         self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_command(self, ctx: commands.Context):
+        msg = f"[AdminExt.on_command] User {EmbedFactory.get_user_info(user=ctx.author)} used `{ctx.cog.qualified_name if ctx.cog is not None else 'bot'}:{ctx.command.name}` command with "\
+              f"following arguments : \n{ctx.args, json.dumps(ctx.kwargs, indent=4, ensure_ascii=False)} "
+        self.bot.get_logger().info(
+            msg=f"[AdminExt.on_command] User {EmbedFactory.get_user_info(user=ctx.author)} used `{ctx.cog.qualified_name if ctx.cog is not None else 'bot'}:{ctx.command.name}` command with "
+                f"following arguments : \n{ctx.args, json.dumps(ctx.kwargs, indent=4, ensure_ascii=False)} "
+        )
+        await self.bot.get_channel(self.bot.bot_config.config["admin_log"]).send(
+            content="command executed 시발"
+        )
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx: commands.Context, error: Type[Exception]):
+        self.bot.get_logger().error(
+            msg=f"[AdminExt.on_command] User {EmbedFactory.get_user_info(user=ctx.author)} used `{ctx.cog.qualified_name if ctx.cog is not None else 'bot'}:{ctx.command.name}` command with "
+                f"following arguments : \n{ctx.args, json.dumps(ctx.kwargs, indent=4, ensure_ascii=False)}\n, and error :\n{error}"
+        )
+        await ctx.channel.send(
+            content=f"An error occured during executing command `{ctx.cog.qualified_name if ctx.cog is not None else 'bot'}:{ctx.command.name}`\n> {error}"
+        )
 
     @commands.is_owner()
     @commands.command(
@@ -78,11 +99,6 @@ class AdminCog(commands.Cog):
         help=""
     )
     async def ext_load_cmd(self, ctx: commands.Context, *, params_raw: str):
-        self.bot.get_logger().info(
-            msg=f"[AdminExt] User {EmbedFactory.get_user_info(user=ctx.author)} used `ext.load` command with "
-                f"following arguments : {params_raw} "
-        )
-
         params = await self.parse_params(params_raw)
 
         category: str = params.pop("category") if "category" in params.keys() else ''
@@ -111,6 +127,14 @@ class AdminCog(commands.Cog):
                 )
                 await ctx.send(embed=result_embed)
 
+                if category == "Utility" and name == "invites":
+                    # During reloading / loading module again, InvitesExt extension lose it`s trackin data.
+                    # So we need to call update() method and re-track invites data.
+                    # But, discord.Guild.invites() method is a coroutine,
+                    # it can`t be called in __init__ method while bot is running.
+                    # So, we need to call update() method manually right after reloading/loading extension again.
+                    await self.bot.get_cog(name).update()
+
     @commands.is_owner()
     @ext_cmd.command(
         name="unload",
@@ -119,11 +143,6 @@ class AdminCog(commands.Cog):
         help=""
     )
     async def ext_unload_cmd(self, ctx: commands.Context, *, params_raw: str):
-        self.bot.get_logger().info(
-            msg=f"[AdminExt] User {EmbedFactory.get_user_info(user=ctx.author)} used `ext.unload` command with "
-                f"following arguments : {params_raw} "
-        )
-
         params = await self.parse_params(params_raw)
 
         category: str = params.pop("category") if "category" in params.keys() else ''
@@ -160,11 +179,6 @@ class AdminCog(commands.Cog):
         help=""
     )
     async def module_reload_cmd(self, ctx: commands.Context, *, params_raw: str):
-        self.bot.get_logger().info(
-            msg=f"[AdminExt] User {EmbedFactory.get_user_info(user=ctx.author)} used `ext.reload` command with "
-                f"following arguments : {params_raw} "
-        )
-
         params = await self.parse_params(params_raw)
 
         category: str = params.pop("category") if "category" in params.keys() else ''
@@ -193,6 +207,14 @@ class AdminCog(commands.Cog):
                 )
                 await ctx.send(embed=result_embed)
 
+                if category == "Utility" and name == "invites":
+                    # During reloading / loading module again, InvitesExt extension lose it`s trackin data.
+                    # So we need to call update() method and re-track invites data.
+                    # But, discord.Guild.invites() method is a coroutine,
+                    # it can`t be called in __init__ method while bot is running.
+                    # So, we need to call update() method manually right after reloading/loading extension again.
+                    await self.bot.get_cog(name).update()
+
     async def parse_params(self, params_raw: str) -> Dict[str, str]:
         params = params_raw.split('-')
         print(params)
@@ -219,4 +241,10 @@ class AdminCog(commands.Cog):
 
 
 def setup(bot: Latte):
-    bot.add_cog(AdminCog(bot))
+    cog = AdminCog(bot)
+    bot.get_logger().info(
+        msg="[AdminExt] Injecting key from ext_map matching with module path into cog ..."
+            "(To access to cog instance in easier way.)"
+    )
+    cog.__cog_name__ = get_cog_name_in_ext(ext_map=bot.ext.ext_map, module_path=AdminCog.__module__)
+    bot.add_cog(cog)

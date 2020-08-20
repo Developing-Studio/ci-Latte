@@ -1,12 +1,8 @@
-import asyncio
-import logging
+import asyncio, logging, discord, koreanbots
 from .DB import UserDB, GuildDB
 from .ExtensionManager import ExtensionManager
 from typing import List, Tuple, Any, Dict, NoReturn, Callable, Union
-import discord
 from discord.ext.commands import AutoShardedBot
-import sqlite3
-
 
 class Config:
     class Types:
@@ -112,8 +108,8 @@ class Latte(AutoShardedBot):
 
     presence_msg_list: List[str] = []
     discord_base_invite: str = "https://discord.gg/"
-    official_community_invite: str = "duYnk96"
-    bug_report_invite: str = "t6vVSYX"
+    official_community_invite: str = "taVq6rw"
+    bug_report_invite: str = "aC4wngr"
 
     def __init__(self, test_mode: bool = False, **options):
         """
@@ -136,7 +132,9 @@ class Latte(AutoShardedBot):
 
         # Setup bot
         self._setup()
-        super().__init__(self.bot_config.config["prefix"], help_command=None, loop=asyncio.get_event_loop(), **options)
+        super(Latte, self).__init__(self.bot_config.config["prefix"], help_command=None, **options)
+
+        # self.koreanbot = koreanbots.Client(self, self.bot_config.config["api"]["koreanbots"], postCount=False)
 
     def _opt_out_token(self, args: Tuple[Any], kwargs: Dict[str, Any]) \
             -> Tuple[Tuple[Tuple[Any], ...], Dict[str, Dict[str, Any]]]:
@@ -284,15 +282,35 @@ class Latte(AutoShardedBot):
         logger.addHandler(hdlr=file_handler)
 
         import os
-        log_files: List[str] = os.listdir("./logs/Latte")
+        log_files: List[str] = sorted(os.listdir("./logs/Latte"))
         if len(log_files) > 7:
             """
             If logs files are stored more than 7, latte will automatically delete logs except recent 7 ones.
             """
             logger.info(msg="Too many logs files are stored! Deleting except recent 7 logs...")
-            for log_file in sorted(log_files, reverse=True)[7:]:
+            for log_file in log_files[:len(log_files)-7]:
                 logger.info(msg=f"Deleting lof file ./logs/Latte/{log_file}")
                 os.remove(path=f'./logs/Latte/{log_file}')
+
+    async def api_get(self, api_url: str, response_type: str = "json") -> Union[Dict[str, Any], str, bytes]:
+        import aiohttp
+        base_url = "https://discord.com/api"
+        if not api_url.startswith('/'):
+            raise ValueError("Invalid API url!")
+
+        url = base_url + api_url
+        headers: dict = {
+            "Authorization": f"Bot {self.bot_config.config['token']}"
+        }
+        async with aiohttp.request(method="get", url=url, headers=headers) as response:
+            if response_type == "json":
+                return await response.json()
+            elif response_type == "text":
+                return await response.text()
+            elif response_type == "bytes":
+                return await response.read()
+            else:
+                raise ValueError("Unexpected respomse type!")
 
     async def presence_loop(self):
         """
@@ -316,3 +334,11 @@ class Latte(AutoShardedBot):
 
         # 봇의 상태메세지를 지속적으로 변경합니다.
         self.loop.create_task(self.presence_loop())
+        import json
+        self.get_logger().info(
+            msg=f"loaded cogs :"
+        )
+        for item in self.cogs:
+            print(item, ":", self.cogs[item])
+
+        # await self.koreanbot.postGuildCount()

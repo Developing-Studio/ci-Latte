@@ -2,24 +2,17 @@ from typing import Type, Dict, List, Tuple
 import discord, json, asyncio
 from discord.ext import commands
 from core import Latte
-from utils import EmbedFactory
+from utils import EmbedFactory, get_cog_name_in_ext
 
 
 class InviteCog(commands.Cog):
     def __init__(self, bot: Latte):
         self.bot = bot
         self.invite_tracks: Dict[str, Dict[str, int]] = {}
-        try:
-            asyncio.wait_for(self.update(), timeout=30)
-        except asyncio.TimeoutError as e:
-            self.bot.get_logger().error(
-                msg="[InvitesExt] Cannot update invites data. Maybe bot is still starting :(",
-                exc_info=e
-            )
-        else:
-            print(self.invite_tracks)
 
     def cog_unload(self):
+        # TODO
+        # Announce to servers using invites-detecting feature about Cog unloading to prepare their announcements.
         pass
 
     @commands.Cog.listener()
@@ -28,7 +21,7 @@ class InviteCog(commands.Cog):
         Called when the client is done preparing the data received from Discord. Usually after login is successful and the Client.guilds and co. are filled up.
         :return:
         """
-        self.invite_tracks = await self.update()
+        await self.update()
         print("[InvitesExt.update] Updated result (Checking assigned value in class instance.) :\n", json.dumps(self.invite_tracks, ensure_ascii=False, indent=4))
 
     @commands.Cog.listener()
@@ -42,7 +35,7 @@ class InviteCog(commands.Cog):
         self.bot.get_logger().info(
             msg=f"[InvitesExt.on_guild_join] Latte joined new discord guild : {guild.name}#{guild.id}, updating tracking invites data."
         )
-        self.invite_tracks = await self.update()
+        await self.update()
         self.bot.get_logger().info(
             msg=f"[InvitesExt.on_guild_join] Start tracking invites data of the guild : {guild.name}#{guild.id}"
         )
@@ -83,7 +76,7 @@ class InviteCog(commands.Cog):
         self.bot.get_logger().info(
             msg=f"[InvitesExt.on_invite_delete] An invite  with code {invite.code} deleted in guild : {invite.guild.name}#{invite.guild.id}"
         )
-        self.invite_tracks[invite.guild.id].pop(invite.code)
+        self.invite_tracks[str(invite.guild.id)].pop(invite.code)
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
@@ -93,14 +86,19 @@ class InviteCog(commands.Cog):
         """
 
         used_invite_code, used_count = await self.compare_invites(member.guild)
+        msg = f"{member.display_name} 님은 {used_invite_code} 초대코드를 사용해 서버에 참여했습니다."
         log_embed: discord.Embed = EmbedFactory.LOG_EMBED(
             title="새로운 멤버 참가!",
             description=f"{member.display_name} 님은 {used_invite_code} 초대코드를 사용해 서버에 참여했습니다."
         )
-        log_embed.add_field(name=f"{used_invite_code}의 현재 사용 횟수 : {used_count}")
-        return await member.guild.system_channel.send(log_embed)
+        log_embed.add_field(name=f"초대코드 `{used_invite_code}`의 현재 사용 횟수", value=f"{used_count}회")
+        await member.guild.system_channel.send(embed=log_embed)
+        self.bot.get_logger().info(
+            msg=msg
+        )
+        await self.update()
 
-    async def update(self) -> Dict[str, Dict[str, int]]:
+    async def update(self):
         self.bot.get_logger().info(
             msg="[InvitesExt.update] Updating tracking invites data..."
         )
@@ -117,10 +115,21 @@ class InviteCog(commands.Cog):
 
             import json
             print("[InvitesExt.update] Updated result (on update method, not assigned to class instance.) :\n", json.dumps(obj=invite_tracks, indent=4, ensure_ascii=False))
-            return invite_tracks
+            self.invite_tracks = invite_tracks
         else:
-            self.bot.get_logger().error("[InvitesExt.update] Bot`s internal cache is not ready! Cannot load invites...")
-            return {}
+            self.bot.get_logger().error(
+                msg="[InvitesExt.update] Bot`s internal cache is not ready! Cannot load invites..."
+            )
+            if type(self.invite_tracks) == dict and self.invite_tracks != {}:
+                self.bot.get_logger().info(
+                    msg="[InvitesExt.update] Keep previously updated invite_tracks for safety."
+                )
+            elif type(self.invite_tracks) != dict:
+                self.bot.get_logger().error(
+                    msg="[InvitesExt.update] Find invalid data is assigned in invite_tracks. "
+                        "Assigning blank dictionary data ( {} )"
+                )
+                self.invite_tracks = {}
 
     async def compare_invites(self, guild: discord.Guild) -> Tuple[str, int]:
         """
@@ -128,10 +137,16 @@ class InviteCog(commands.Cog):
         :param guild:
         :return:
         """
-        async for invite in await guild.invites():
-            if self.invite_tracks[invite.code] < invite.uses:
+        for invite in await guild.invites():
+            if self.invite_tracks[str(guild.id)][invite.code] < invite.uses:
                 return invite.code, invite.uses
 
 
 def setup(bot: Latte):
-    bot.add_cog(InviteCog(bot))
+    cog = InviteCog(bot)
+    bot.get_logger().info(
+        msg="[InvitesExt] Injecting key from ext_map matching with module path into cog ..."
+            "(To access to cog instance in easier way.)"
+    )
+    cog.__cog_name__ = get_cog_name_in_ext(ext_map=bot.ext.ext_map, module_path=InviteCog.__module__)
+    bot.add_cog(cog)
