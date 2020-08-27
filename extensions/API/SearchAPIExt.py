@@ -1,10 +1,10 @@
-from discord.ext import commands
 import discord, logging, aiohttp, json
+from discord.ext import commands
 from xml.etree.ElementTree import Element, ElementTree, fromstring
 from typing import List, Optional, Mapping, Dict, Tuple
 from core import Latte
 from utils import get_cog_name_in_ext, EmbedFactory
-from API.SearchAPIExceptions import *
+from .SearchAPIExceptions import *
 
 
 class NaverSearch:
@@ -144,8 +144,8 @@ class SearchAPICog(commands.Cog):
     def __init__(self, bot: Latte):
         self.bot: Latte = bot
         self.naverSearch = NaverSearch(
-            client_id=bot.bot_config.config["api"]["naver"]["client_id"],
-            client_secret=bot.bot_config.config["api"]["naver"]["client_secret"]
+            client_id=bot.config["api"]["naver"]["client_id"],
+            client_secret=bot.config["api"]["naver"]["client_secret"]
         )
         self.googleSearch = GoogleSearch()
         self.bot.logger.info("[SearchAPIExt.init] SearchAPI module have been initialized.")
