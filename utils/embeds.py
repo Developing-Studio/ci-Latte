@@ -1,4 +1,4 @@
-from typing import NoReturn, Dict, List, Any, overload
+from typing import NoReturn, Dict, List, Any, overload, Tuple, Union
 import discord, re
 from .design_patterns import Factory
 from discord import Embed, Colour, User
@@ -164,20 +164,25 @@ class EmbedFactory(Factory):
         self._fields.extend(value)
 
     @overload
-    async def add_field(self, name: str, value: str, inline: bool = False):
+    async def add_field(self, args: Tuple[str, str, bool]):
+        name = args[0]
+        value = args[1]
+        inline = args[2]
         if type(name) != str or type(value) != str or type(inline) != bool:
-            raise TypeError("Field name and value must be a str, str, bool!")
+            raise TypeError("Invalid type of parameter was passed in method : "
+                            "EmbedFactory.add_field(Tuple[str, str, bool]")
         self.fields.append({"name": name, "value": value, "inline": inline})
 
     @overload
-    async def add_field(self, field: Dict[str, str]):
+    async def add_field(self, field: Dict[str, Union[str, bool]]):
         if "name" in field.keys() and "value" in field.keys():
             self.fields.append(field)
         else:
             raise InvalidFieldError(embed_factory=self, invalid_field=field)
 
     async def add_field(self, any: Any):
-        raise NotImplementedError("Unexpected Overloaded method called : EmbedFactory.add_field")
+        raise NotImplementedError("Unexpected Overloaded method called : "
+                                  "EmbedFactory.add_field(Dict[str, Union[str, bool]]")
 
     async def add_fields(self, *fields: Dict[str, str]) -> NoReturn:
         for field in fields:
@@ -185,7 +190,7 @@ class EmbedFactory(Factory):
 
                 # Instead of appending `field` itself, append values using "name" and "value" key
                 # to prevent unexpected key in field.
-                await self.add_field(name=field["name"], value=field["value"])
+                await self.add_field(args=(field["name"], field["value"], False))
             else:
                 raise InvalidFieldError(embed_factory=self, invalid_field=field)
 
