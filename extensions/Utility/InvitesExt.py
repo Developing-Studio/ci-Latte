@@ -109,9 +109,33 @@ class InviteCog(commands.Cog):
             invite_tracks: Dict[str, Dict[str, int]] = {}
             for guild in self.bot.guilds:
                 invite_tracks[str(guild.id)] = {}
-                guild_invites: List[discord.Invite] = await guild.invites()
-                for invite in guild_invites:
-                    invite_tracks[str(guild.id)].update({invite.code: invite.uses})
+                guild_invites = []
+                if guild.me.guild_permissions.manage_guild:
+                    try:
+                        guild_invites: List[discord.Invite] = await guild.invites()
+                        for invite in guild_invites:
+                            invite_tracks[str(guild.id)].update({invite.code: invite.uses})
+                    except discord.HTTPException as e:
+                        await self.bot.get_channel(self.bot.config["admin_log"]).send(
+                            embed=await EmbedFactory(
+                                title="[InvitesExt.update] 서버의 초대 정보를 가져오는 도중 HTTP 오류가 발생했습니다!",
+                                color=EmbedFactory.error_color,
+                                author={
+                                    "name": EmbedFactory.get_user_info(self.bot.user, contain_id=False),
+                                    "icon_url": self.bot.user.avatar_url
+                                },
+                                footer={
+                                    "text": f"서버 주인 : {EmbedFactory.get_user_info(guild.owner if guild.owner is not None else self.bot.user, contain_id=True)}",
+                                    "icon_url": guild.owner.avatar_url if guild.owner is not None else self.bot.user.avatar_url
+                                },
+                                fields=[
+                                    {
+                                        "name": "오류가 발생한 서버 정보",
+                                        "value": f"이름 : {guild.name}\nid : {guild.id}\n "
+                                    }
+                                ]
+                            ).build()
+                        )
 
             import json
             print("[InvitesExt.update] Updated result (on update method, not assigned to class instance.) :\n", json.dumps(obj=invite_tracks, indent=4, ensure_ascii=False))
