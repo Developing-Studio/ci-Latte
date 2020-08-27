@@ -14,3 +14,6 @@ from .latte import *
 from .DB import *
 from .ExtensionManager import *
 from .exceptions import *
+from .config import *
+from .Service import *
+from .DocParser import *
