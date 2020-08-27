@@ -3,9 +3,27 @@ from core import Latte
 from utils import get_cog_name_in_ext
 
 
+class LOL_API:
+    def __init__(self, token: str):
+        self.token = token
+
+
+class PUBG_API:
+    def __init__(self, token: str):
+        self.token = token
+
+
+class R6S_API:
+    def __init__(self, token: str):
+        self.token = token
+
+
 class GameStatsCog(commands.Cog):
     def __init__(self, bot: Latte):
         self.bot = bot
+        self.lol = LOL_API(bot.config.config["api"])
+        self.pubg = PUBG_API(bot.config.config["api"])
+        self.r6s = R6S_API(bot.config.config["api"])
 
 
 def setup(bot: Latte):
