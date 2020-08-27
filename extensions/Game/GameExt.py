@@ -17,6 +17,15 @@ class GameCog(commands.Cog):
     async def roll_the_dice(self, ctx: commands.Context, start: int = 1, end: int = 6):
         if start > end:
             start, end = end, start
+        if start < -128 or end > 127:
+            return await ctx.send(
+                    embed=EmbedFactory.COMMAND_LOG_EMBED(
+                        title="주사위를 굴릴 수 없습니다!",
+                        description="숫자가 너무 큽니다! 범위는 -128 ~ 127 사이만 가능합니다.\n"
+                                    "(과도하게 큰 수를 사용하는 몇몇 유저들을 위한 조치입니다.)",
+                        user=ctx.author
+                    )
+            )
         import random
         result = random.randint(start, end)
         result_embed_factory = EmbedFactory(
