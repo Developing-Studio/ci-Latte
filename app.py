@@ -35,7 +35,7 @@ def main():
         excutable = sys.executable
         sys_args = sys.argv[:]
         print(f"System arguments : {sys_args}")
-        args.insert(0, excutable)
+        sys_args.insert(0, excutable)
         print(f"Executing cmd command with arguments ` {sys_args} `")
         os.execv(sys.executable, sys_args)
 
