@@ -2,6 +2,6 @@
 venv
 Latte_ReWrite
 config.json
-/logs/
-/test/
-/DB/
+logs
+test
+DB
