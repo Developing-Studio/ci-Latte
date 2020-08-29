@@ -66,7 +66,7 @@ class Latte(AutoShardedBot):
 
         # Setup bot
         self._setup()
-        super(Latte, self).__init__(self.get_guild_prefix, help_command=None, **options)
+        super(Latte, self).__init__(command_prefix=self.get_guild_prefix, help_command=None, **options)
 
         self.db = DBWrapper(
             id=self.config["database"]["id"],
@@ -234,8 +234,13 @@ class Latte(AutoShardedBot):
                 latte_logger.info(msg=f"Deleting lof file ./logs/Latte/{log_file}")
                 os.remove(path=f'./logs/Latte/{log_file}')
 
-    def get_guild_prefix(self, message: discord.Message) -> str:
-        # guild_prefix: str = self.guild_db.get(message.guild.id)
+    def get_guild_prefix(self, message: discord.Message) -> List[str]:
+        """
+        Return guild specific prefix.
+        :param message: Message to define command prefix.
+        :return: command prefix (List[str] or str)
+        """
+        # guild_prefix: str = self.db.get(message.guild.id)
         # return guild_prefix
         return self.config["test"]["prefix"] if self.test_mode else self.config["prefix"]
 
