@@ -1,11 +1,32 @@
 from discord.ext import commands
-from core import Latte
+from core import Latte, LatteParty, LatteUser
 from utils import get_cog_name_in_ext
 
 
 class PartyCog(commands.Cog):
     def __init__(self, bot: Latte):
         self.bot = bot
+        
+    @commands.group(
+        name="party",
+        aliases=["파티"],
+        description="",
+        help=""
+    )
+    async def party(self, ctx: commands.Context):
+        if ctx.invoked_subcommand is None:
+            pass
+
+    @party.command(
+        name="create",
+        aliases=["생성"],
+        description="",
+        help=""
+    )
+    async def create(self, ctx: commands.Context, *, params_raw: str):
+        params = params_raw.split(":")
+        name = params[0]
+        desc = params[1]
 
 
 def setup(bot: Latte):

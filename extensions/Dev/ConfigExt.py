@@ -118,11 +118,13 @@ class ConfigCog(commands.Cog):
     )
     async def config_show(self, ctx: commands.Context):
         import json
+        # config instance is json type, so it only have primitive values.
         copied = self.bot.config.config.copy()
         copied.pop("api")
         copied.pop("token")
         copied.pop("test")
         copied.pop("lavalink")
+        copied.pop("database")
         config_lines: List[str] = json.dumps(obj=copied, ensure_ascii=False, indent=4).split('\n')
         await ctx.author.send(content=": Start of stored config content :")
         for line_num, line in enumerate(config_lines):

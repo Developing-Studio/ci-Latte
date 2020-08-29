@@ -38,9 +38,6 @@ class BotInfoCog(commands.Cog):
         봇 초대링크를 생성, 전송합니다.
         """
         bot_invite_url: str = discord.utils.oauth_url(client_id=str(self.bot.user.id)) + "&permissions=8"
-        self.bot.get_logger().info(
-            msg=f"[UtilsExt.invite_url] bot_invite_url : {bot_invite_url}"
-        )
         await ctx.send(f"> 초대 링크입니다! → {bot_invite_url}")
 
     @commands.command(
@@ -86,8 +83,8 @@ class BotInfoCog(commands.Cog):
                     }
                 ]
             )
-            await bug_embed_factory.add_field(("제보 유형", report_type, False))
-            await bug_embed_factory.add_field(("제보 내용", report_content, False))
+            await bug_embed_factory.add_field(name="제보 유형", value=report_type, inline=False)
+            await bug_embed_factory.add_field(name="제보 내용", value=report_content, inline=False)
 
             for dev_id in self.bot.owner_id:
                 developer_user: discord.User = self.bot.get_user(dev_id)

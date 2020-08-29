@@ -253,6 +253,48 @@ class AdminCog(commands.Cog):
                     await choice(guild.text_channels).send(embed=embed)
 
     @commands.is_owner()
+    @commands.command(
+        name="guilds",
+        aliases=["servers", "길드목록", "서버목록"],
+        description="",
+        help=""
+    )
+    async def guilds_list(self, ctx: commands.Context):
+        import datetime
+        cmd_date: datetime.datetime = ctx.message.created_at
+        embed_factory = EmbedFactory(
+            title="[ 라떼봇 정보 ] 라떼봇이 참여한 서버 목록입니다.",
+            description=f"[{cmd_date.tzinfo}] : {cmd_date} 에 측정한 데이터입니다.",
+            color=EmbedFactory.default_color,
+            author={
+                "name": EmbedFactory.get_user_info(self.bot.user, contain_id=False),
+                "icon_url": self.bot.user.avatar_url
+            },
+            footer=EmbedFactory.get_command_caller(ctx.author)
+        )
+
+        for guild in self.bot.guilds:
+            join: datetime.datetime = guild.me.joined_at
+            # await embed_factory.add_field(
+            #     {
+            #         "name": f"{guild.name}",
+            #         "value": f"주인 : {EmbedFactory.get_user_info(guild.owner)}\n봇 참여일자 : [{join.tzinfo}] {join}",
+            #         "inline": False
+            #     }
+            # )
+            await embed_factory.add_field(
+                (
+                    f"{guild.name}",
+                    f"주인 : {EmbedFactory.get_user_info(guild.owner)}\n봇 참여일자 : [{join.tzinfo}] {join}",
+                    False
+                )
+            )
+
+        return await ctx.send(
+            embed=await embed_factory.build()
+        )
+
+    @commands.is_owner()
     @commands.group(
         name="extension",
         aliases=["확장", "ext", "모듈", 'm', "module"],

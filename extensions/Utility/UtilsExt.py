@@ -68,9 +68,9 @@ class UtilsCog(commands.Cog):
         )
 
         is_nitro: bool = bool(member.premium_since)
-        await embed_factory.add_field(("프리미엄(니트로) 여부", str(is_nitro), False))
+        await embed_factory.add_field(name="프리미엄(니트로) 여부", value=str(is_nitro), inline=False)
         if is_nitro:
-            await embed_factory.add_field(("프리미엄 사용 시작 날짜", str(member.premium_since), True))
+            await embed_factory.add_field(name="프리미엄 사용 시작 날짜", value=str(member.premium_since), inline=True)
         """
         info_embed.add_field('Hypesquad 여부', user_profile.hypesquad, False)
         if user_profile.hypesquad:
@@ -174,55 +174,55 @@ class UtilsCog(commands.Cog):
         )
 
         if len(member.activities) == 0:
-            await embed_factory.add_field(("활동 정보가 없습니다!", "현재 진행중인 활동이 없습니다.", False))
+            await embed_factory.add_field(name="활동 정보가 없습니다!", value="현재 진행중인 활동이 없습니다.", inline=False)
             return await ctx.send(embed=await embed_factory.build())
         else:
             count: int = 1
             for ac in member.activities:
-                await embed_factory.add_field(('\u200b', '\u200b', False))  # 공백 개행을 만든다.
+                await embed_factory.add_field(name='\u200b', value='\u200b', inline=False)  # 공백 개행을 만든다.
                 self.bot.get_logger().info(
                     msg=f"[UtilsExt.useractivity] 활동 {count} : {type(ac)}, .type = {ac.type}"
                 )
                 try:
-                    await embed_factory.add_field((f"**활동 {count} 이름**", ac.name, False))
+                    await embed_factory.add_field(f"**활동 {count} 이름**", ac.name, False)
                     if ac.type == discord.ActivityType.playing:
-                        await embed_factory.add_field((f"활동 {count} 유형", "플레이 중", False))
+                        await embed_factory.add_field(f"활동 {count} 유형", "플레이 중", False)
                         if type(ac) != discord.Game and ac.large_image_url is not None:
-                            await embed_factory.add_field(("활동 이미지", '\u200b', False))
+                            await embed_factory.add_field("활동 이미지", '\u200b', False)
                             embed_factory.image_url = ac.large_image_url
                     elif ac.type == discord.ActivityType.streaming:
-                        await embed_factory.add_field((f"활동 {count} 유형", "방송 중", False))
+                        await embed_factory.add_field(f"활동 {count} 유형", "방송 중", False)
                         if type(ac) == discord.Streaming:
-                            await embed_factory.add_field((f"**방송 정보**", '\u200b', False))
-                            await embed_factory.add_field((f"방송 플랫폼", ac.platform, False))
+                            await embed_factory.add_field(f"**방송 정보**", '\u200b', False)
+                            await embed_factory.add_field(f"방송 플랫폼", ac.platform, False)
                             if ac.twitch_name is not None:
-                                await embed_factory.add_field((f"트위치 이름", ac.twitch_name, True))
-                            await embed_factory.add_field(("방송 주소", ac.url, False))
+                                await embed_factory.add_field(f"트위치 이름", ac.twitch_name, True)
+                            await embed_factory.add_field("방송 주소", ac.url, False)
                             if ac.game is not None:
-                                await embed_factory.add_field(("방송중인 게임", ac.game, False))
+                                await embed_factory.add_field("방송중인 게임", ac.game, False)
 
                     elif ac.type == discord.ActivityType.listening:
-                        await embed_factory.add_field((f"활동 {count} 이름", ac.name, False))
-                        await embed_factory.add_field((f"활동 {count} 유형", "듣는 중", False))
+                        await embed_factory.add_field(f"활동 {count} 이름", ac.name, False)
+                        await embed_factory.add_field(f"활동 {count} 유형", "듣는 중", False)
 
                     elif ac.type == discord.ActivityType.watching:
-                        await embed_factory.add_field((f"활동 {count} 이름", ac.name, False))
-                        await embed_factory.add_field((f"활동 {count} 유형", "시청 중", False))
+                        await embed_factory.add_field(f"활동 {count} 이름", ac.name, False)
+                        await embed_factory.add_field(f"활동 {count} 유형", "시청 중", False)
 
                     elif ac.type == discord.ActivityType.custom:
                         ac_extra = ''
                         if ac.emoji is not None:
                             ac_extra += ac.emoji.name
-                        await embed_factory.add_field((f"활동 {count} 이름", ac_extra + ac.name, False))
-                        await embed_factory.add_field((f"활동 {count} 유형", "사용자 지정 활동", False))
+                        await embed_factory.add_field(f"활동 {count} 이름", ac_extra + ac.name, False)
+                        await embed_factory.add_field(f"활동 {count} 유형", "사용자 지정 활동", False)
 
                     elif ac.type == discord.ActivityType.unknown:
-                        await embed_factory.add_field((f"활동 {count} 이름", "알 수 없는 활동입니다!", False))
+                        await embed_factory.add_field(f"활동 {count} 이름", "알 수 없는 활동입니다!", False)
                     else:
-                        await embed_factory.add_field((f"요청하신 사용자의 활동을 파악하지 못했습니다!", "유효한 활동 유형이 아닙니다 :(", False))
+                        await embed_factory.add_field(f"요청하신 사용자의 활동을 파악하지 못했습니다!", "유효한 활동 유형이 아닙니다 :(", False)
                 except Exception as e:
-                    await embed_factory.add_field((f"오류 발생!", "활동 정보를 불러오지 못했습니다 :(", False))
-                    await embed_factory.add_field((f"오류 내용", str(e.with_traceback(e.__traceback__)), False))
+                    await embed_factory.add_field(f"오류 발생!", "활동 정보를 불러오지 못했습니다 :(", False)
+                    await embed_factory.add_field(f"오류 내용", str(e.with_traceback(e.__traceback__)), False)
 
                 count += 1
 

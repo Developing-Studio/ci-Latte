@@ -1,4 +1,4 @@
-from typing import NoReturn, Dict, List, Any, overload, Tuple, Union
+from typing import NoReturn, Dict, List, Any, overload, Tuple, Union, Optional
 import discord, re
 from .design_patterns import Factory
 from discord import Embed, Colour, User
@@ -31,8 +31,8 @@ class EmbedCheck:
 
     @staticmethod
     def check_fields(value) -> bool:
-        return type(value) == list and [type(item) for item in value] == [dict]*len(value) \
-               and [("name" in item and "value" in item) for item in value] == [True]*len(value)
+        return type(value) == list and [type(item) for item in value] == [dict] * len(value) \
+               and [("name" in item and "value" in item) for item in value] == [True] * len(value)
 
 
 class EmbedFactory(Factory):
@@ -43,15 +43,22 @@ class EmbedFactory(Factory):
 
     def __init__(self, **attrs):
         self.target_cls = Embed.__class__
-        self._title: str = attrs.pop("title") if "title" in attrs.keys() and EmbedCheck.check_title(attrs["title"]) else ""
-        self._description: str = attrs.pop("description") if "description" in attrs.keys() and EmbedCheck.check_desc(attrs["description"]) else ""
-        self._color: Colour = attrs.pop("color") if "color" in attrs.keys() and EmbedCheck.check_color(attrs["color"]) else self.default_color
-        self._author: Dict[str, str] = attrs.pop("author") if "author" in attrs.keys() and EmbedCheck.check_author(attrs["author"]) else {"name": "", "icon_url": ""}
-        self._footer: Dict[str, str] = attrs.pop("footer") if "footer" in attrs.keys() and EmbedCheck.check_footer(attrs["footer"]) else {"text": "", "icon_url": ""}
+        self._title: str = attrs.pop("title") if "title" in attrs.keys() and EmbedCheck.check_title(
+            attrs["title"]) else ""
+        self._description: str = attrs.pop("description") if "description" in attrs.keys() and EmbedCheck.check_desc(
+            attrs["description"]) else ""
+        self._color: Colour = attrs.pop("color") if "color" in attrs.keys() and EmbedCheck.check_color(
+            attrs["color"]) else self.default_color
+        self._author: Dict[str, str] = attrs.pop("author") if "author" in attrs.keys() and EmbedCheck.check_author(
+            attrs["author"]) else {"name": "", "icon_url": ""}
+        self._footer: Dict[str, str] = attrs.pop("footer") if "footer" in attrs.keys() and EmbedCheck.check_footer(
+            attrs["footer"]) else {"text": "", "icon_url": ""}
         # self._thumbnail_url: str = attrs.pop("thumbnail_url") if "thumbnail_url" in attrs.keys() and EmbedCheck.check_url(attrs["thumbnail_url"]) else ""
         self._thumbnail_url: str = attrs.pop("thumbnail_url") if "thumbnail_url" in attrs.keys() else ""
-        self._image_url: str = attrs.pop("image_url") if "image_url" in attrs.keys() and EmbedCheck.check_url(attrs["image_url"]) else ""
-        self._fields: List[Dict[str, str]] = attrs.pop("fields") if "fields" in attrs.keys() and EmbedCheck.check_fields(attrs["fields"]) else []
+        self._image_url: str = attrs.pop("image_url") if "image_url" in attrs.keys() and EmbedCheck.check_url(
+            attrs["image_url"]) else ""
+        self._fields: List[Dict[str, str]] = attrs.pop(
+            "fields") if "fields" in attrs.keys() and EmbedCheck.check_fields(attrs["fields"]) else []
 
         print(attrs)
 
@@ -163,34 +170,45 @@ class EmbedFactory(Factory):
         # Value Assign
         self._fields.extend(value)
 
-    @overload
-    async def add_field(self, args: Tuple[str, str, bool]):
-        name = args[0]
-        value = args[1]
-        inline = args[2]
+    # @overload
+    # async def add_field(self, args: Tuple[str, str, bool]):
+    #     name = args[0]
+    #     value = args[1]
+    #     inline = args[2]
+    #     if type(name) != str or type(value) != str or type(inline) != bool:
+    #         raise TypeError("Invalid type of parameter was passed in method : "
+    #                         "EmbedFactory.add_field(Tuple[str, str, bool]")
+    #     self.fields.append({"name": name, "value": value, "inline": inline})
+    #
+    # @overload
+    # async def add_field(self, field: Dict[str, Union[str, bool]]):
+    #     if "name" in field.keys() and "value" in field.keys():
+    #         self.fields.append(field)
+    #     else:
+    #         raise InvalidFieldError(embed_factory=self, invalid_field=field)
+    #
+    # async def add_field(self, any: Any):
+    #     print(f"Passed arguments :\n{any}")
+    #     raise NotImplementedError("Unexpected Overloaded method called : "
+    #                               "EmbedFactory.add_field(any)")
+
+    async def add_field(self, name: str, value: str, inline: bool = False):
         if type(name) != str or type(value) != str or type(inline) != bool:
             raise TypeError("Invalid type of parameter was passed in method : "
                             "EmbedFactory.add_field(Tuple[str, str, bool]")
         self.fields.append({"name": name, "value": value, "inline": inline})
 
-    @overload
-    async def add_field(self, field: Dict[str, Union[str, bool]]):
-        if "name" in field.keys() and "value" in field.keys():
-            self.fields.append(field)
-        else:
-            raise InvalidFieldError(embed_factory=self, invalid_field=field)
-
-    async def add_field(self, any: Any):
-        raise NotImplementedError("Unexpected Overloaded method called : "
-                                  "EmbedFactory.add_field(Dict[str, Union[str, bool]]")
-
-    async def add_fields(self, *fields: Dict[str, str]) -> NoReturn:
+    async def add_fields(self, *fields: Dict[str, Union[str, bool]]) -> NoReturn:
         for field in fields:
             if "name" in field.keys() and "value" in field.keys():
 
                 # Instead of appending `field` itself, append values using "name" and "value" key
                 # to prevent unexpected key in field.
-                await self.add_field(args=(field["name"], field["value"], False))
+                await self.add_field(
+                    name=field["name"],
+                    value=field["value"],
+                    inline=field["inline"] if "inline" in field.keys() else False
+                )
             else:
                 raise InvalidFieldError(embed_factory=self, invalid_field=field)
 
@@ -211,7 +229,8 @@ class EmbedFactory(Factory):
             embed.set_author(name=self.author["name"], icon_url=self.author["icon_url"])
 
         for field in self.fields:
-            embed.add_field(name=field["name"], value=field["value"], inline=bool(field["inline"]) if "inline" in field else False)
+            embed.add_field(name=field["name"], value=field["value"],
+                            inline=bool(field["inline"]) if "inline" in field else False)
 
         if self.footer["text"] != "" and self.footer["icon_url"] != "":
             embed.set_footer(text=self.footer["text"], icon_url=self.footer["icon_url"])
@@ -219,7 +238,9 @@ class EmbedFactory(Factory):
         return embed
 
     @classmethod
-    def get_user_info(cls, user: User, contain_id: bool = True) -> str:
+    def get_user_info(cls, user: User, contain_id: bool = True) -> Optional[str]:
+        if user is None:
+            return None
         return f"{user.name}#{user.discriminator}" + f" ({user.id})" if contain_id else ''
 
     @classmethod
