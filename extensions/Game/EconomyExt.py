@@ -25,7 +25,7 @@ class EconomyCog(commands.Cog):
         help=""
     )
     async def wallet(self, ctx: commands.Context):
-        self.bot.user_db.get(user_id=ctx.author.id, field="economy")
+        pass
 
 
 def setup(bot: Latte):
