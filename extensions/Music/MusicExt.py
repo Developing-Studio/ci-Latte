@@ -5,7 +5,6 @@ from utils import get_cog_name_in_ext
 
 # Select one from these lavalink wrappers.
 import wavelink
-import lavalink
 
 
 class MusicCog(commands.Cog):
