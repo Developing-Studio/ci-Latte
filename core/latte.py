@@ -234,7 +234,8 @@ class Latte(AutoShardedBot):
                 latte_logger.info(msg=f"Deleting lof file ./logs/Latte/{log_file}")
                 os.remove(path=f'./logs/Latte/{log_file}')
 
-    def get_guild_prefix(self, message: discord.Message) -> List[str]:
+    @staticmethod
+    def get_guild_prefix(bot, message: discord.Message) -> List[str]:
         """
         Return guild specific prefix.
         :param message: Message to define command prefix.
@@ -242,7 +243,7 @@ class Latte(AutoShardedBot):
         """
         # guild_prefix: str = self.db.get(message.guild.id)
         # return guild_prefix
-        return self.config["test"]["prefix"] if self.test_mode else self.config["prefix"]
+        return bot.config["test"]["prefix"] if bot.test_mode else bot.config["prefix"]
 
     async def api_get(self, api_url: str, response_type: str = "json") -> Union[Dict[str, Any], str, bytes]:
         import aiohttp
