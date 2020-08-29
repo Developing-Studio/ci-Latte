@@ -1,4 +1,5 @@
 # Latte
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 ![Python](https://img.shields.io/badge/python-3.8.5-blue.svg?style=flat&logo=Python)
 ![discord.py](https://img.shields.io/badge/discord.py-1.4.1-blue.svg?style=flat&logo=Discord)
 
