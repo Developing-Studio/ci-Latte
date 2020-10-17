@@ -28,5 +28,5 @@ discord.py 1.4.1
 같이 게임할 사람을 모으신다고요? 라떼봇의 파티 기능은 당신과 함께해줄 사람들을 더 편리하게 모을 수 있도록 도와줍니다!
 
 # Contributers of this repository
-**HOREON** : Translate bot's commands and messages into Japanese. [WIP]
-**khk4912** : fixed the issue "Logger print logs twice". Thanks!
+- **HOREON** : Translate bot's commands and messages into Japanese. [WIP]
+- **khk4912** : fixed the issue "Logger print logs twice". Thanks!
