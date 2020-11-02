@@ -1,9 +1,13 @@
-# Latte
+# Latte (Archieved.)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 ![Python](https://img.shields.io/badge/python-3.8.5-blue.svg?style=flat&logo=Python)
 ![discord.py](https://img.shields.io/badge/discord.py-1.4.1-blue.svg?style=flat&logo=Discord)
 
 라떼는 여러분들의 디스코드에서의 생활을 한층 더 여유롭게, 달달하게 만들어줄 디스코드 봇입니다.
+
+---
+현재 새 버전의 라떼봇을 다시 작성하고 있습니다. Intents의 도입으로 기존에 제공하던 기능들을 다시 검토하고, Intents 제약에 영향을 받는 기능들을 다시 개발할 예정이며, 봇 자체도 유연성을 위해 discord.py와 몇몇 새 라이브러리들을 사용해 재개발할 예정입니다.
+새로 개발중인 봇 코드 저장소는 추후 어느정도 개발이 진행되어 서비스가 가능해지는 시점에 공개하겠습니다 :D
 
 ## 개발 환경
 Python 3.8.5
